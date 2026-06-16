@@ -56,6 +56,47 @@ async function runTest() {
     successController.abort();
     console.log('✅ Correctly allowed request with valid token!');
 
+    // D. Request /sse with valid token but WRONG client ID (Should fail)
+    console.log('Requesting SSE connection with valid token but WRONG client ID...');
+    const wrongClientRes = await fetch(`${baseUrl}/sse?auth_token=my-super-secret-mcp-key&client_id=hacky-client`);
+    console.log('Status code (wrong client id):', wrongClientRes.status);
+    assert.strictEqual(wrongClientRes.status, 401, 'Should fail with 401 Unauthorized');
+    console.log('✅ Correctly blocked request with wrong client ID!');
+
+    // E. Request /sse with valid token and VALID client ID 'admin' (Should succeed)
+    console.log('Requesting SSE connection with valid token and VALID client ID...');
+    const successClientController = new AbortController();
+    const successClientRes = await fetch(`${baseUrl}/sse?auth_token=my-super-secret-mcp-key&client_id=admin`, {
+      signal: successClientController.signal
+    });
+    console.log('Status code (valid client id):', successClientRes.status);
+    assert.strictEqual(successClientRes.status, 200, 'Should connect with 200 OK');
+    successClientController.abort();
+    console.log('✅ Correctly allowed request with valid token & client ID!');
+
+    // F. Request /sse with Basic Auth using 'admin:my-super-secret-mcp-key' (Should succeed)
+    console.log('Requesting SSE connection with Basic Auth (admin:my-super-secret-mcp-key)...');
+    const basicController = new AbortController();
+    const basicAuthHeader = 'Basic ' + Buffer.from('admin:my-super-secret-mcp-key').toString('base64');
+    const basicRes = await fetch(`${baseUrl}/sse`, {
+      headers: { 'Authorization': basicAuthHeader },
+      signal: basicController.signal
+    });
+    console.log('Status code (Basic Auth):', basicRes.status);
+    assert.strictEqual(basicRes.status, 200, 'Should connect with 200 OK');
+    basicController.abort();
+    console.log('✅ Correctly allowed Basic Auth connection!');
+
+    // G. Request /sse with Basic Auth using wrong password (Should fail)
+    console.log('Requesting SSE connection with Basic Auth using wrong password...');
+    const wrongBasicAuthHeader = 'Basic ' + Buffer.from('admin:wrong-pass').toString('base64');
+    const wrongBasicRes = await fetch(`${baseUrl}/sse`, {
+      headers: { 'Authorization': wrongBasicAuthHeader }
+    });
+    console.log('Status code (Wrong Basic Auth):', wrongBasicRes.status);
+    assert.strictEqual(wrongBasicRes.status, 401, 'Should fail with 401');
+    console.log('✅ Correctly blocked wrong Basic Auth password!');
+
     console.log('--- All Authentication Middleware Verification Passed! ---');
   } catch (err) {
     console.error('❌ Verification failed:', err);
