@@ -7,13 +7,13 @@ import { GEARS, getGearDiagnostics } from '../lib/diagnostics.js';
 export const name = 'scrape_batch';
 export const description = 'Scrapes multiple URLs concurrently up to a specified limit, and enriches each URL using NVIDIA NIM.';
 
-export const schema = {
+export const schema = z.object({
   urls: z.array(z.string()).max(10).describe('List of target URLs to process (maximum 10)'),
   prompt: z.string().describe('Instruction for enrichment applied to each URL'),
   render_js: z.boolean().optional().default(false).describe('Whether to use JS rendering via ScraperAPI (default: false for speed)'),
   delay_ms: z.number().optional().default(1000).describe('Delay in milliseconds between sequential requests (only active if concurrency is 1)'),
   concurrency: z.number().optional().default(3).describe('Number of concurrent requests to process in parallel (default: 3, max: 5)')
-};
+});
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

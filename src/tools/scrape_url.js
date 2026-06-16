@@ -6,11 +6,11 @@ import { GEARS, getGearDiagnostics } from '../lib/diagnostics.js';
 export const name = 'scrape_url';
 export const description = 'Scrapes a target URL and returns clean readable text with HTML stripped.';
 
-export const schema = {
+export const schema = z.object({
   url: z.string().describe('The target URL to scrape'),
   render_js: z.boolean().optional().default(true).describe('Whether to use JS rendering via ScraperAPI (default: true)'),
   country_code: z.string().optional().describe('Proxy country code e.g. "in" for India, "us" for USA')
-};
+});
 
 /**
  * Calculate approximate word count.

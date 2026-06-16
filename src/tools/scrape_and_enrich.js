@@ -7,12 +7,12 @@ import { GEARS, getGearDiagnostics } from '../lib/diagnostics.js';
 export const name = 'scrape_and_enrich';
 export const description = 'Scrapes a URL, cleans the content, and enriches it using NVIDIA NIM LLM to extract structured data as JSON.';
 
-export const schema = {
+export const schema = z.object({
   url: z.string().describe('The target URL to scrape and enrich'),
   prompt: z.string().describe('Instruction for enrichment, e.g. "Extract all project names and client names as JSON"'),
   render_js: z.boolean().optional().default(true).describe('Whether to use JS rendering via ScraperAPI (default: true)'),
   country_code: z.string().optional().describe('Proxy country code e.g. "in" for India, "us" for USA')
-};
+});
 
 /**
  * Handle the scrape_and_enrich tool execution.
