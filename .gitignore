@@ -1,0 +1,16 @@
+# Dependency directories
+node_modules/
+scraper-mcp/node_modules/
+
+# Environment files
+.env
+scraper-mcp/.env
+
+# Local logging outputs
+logs/
+scraper-mcp/logs/
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db

@@ -7,6 +7,8 @@ import * as scrapeUrlTool from './tools/scrape_url.js';
 import * as scrapeAndEnrichTool from './tools/scrape_and_enrich.js';
 import * as scrapeBatchTool from './tools/scrape_batch.js';
 import { logUserEvent } from './lib/user_logger.js';
+import { startKeepAlive } from './lib/keep_alive.js';
+import { authenticateToken } from './lib/auth.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -17,24 +19,30 @@ const server = new McpServer({
 });
 
 // Register Tools
-server.tool(
+server.registerTool(
   scrapeUrlTool.name,
-  scrapeUrlTool.description,
-  scrapeUrlTool.schema,
+  {
+    description: scrapeUrlTool.description,
+    inputSchema: scrapeUrlTool.schema
+  },
   scrapeUrlTool.handler
 );
 
-server.tool(
+server.registerTool(
   scrapeAndEnrichTool.name,
-  scrapeAndEnrichTool.description,
-  scrapeAndEnrichTool.schema,
+  {
+    description: scrapeAndEnrichTool.description,
+    inputSchema: scrapeAndEnrichTool.schema
+  },
   scrapeAndEnrichTool.handler
 );
 
-server.tool(
+server.registerTool(
   scrapeBatchTool.name,
-  scrapeBatchTool.description,
-  scrapeBatchTool.schema,
+  {
+    description: scrapeBatchTool.description,
+    inputSchema: scrapeBatchTool.schema
+  },
   scrapeBatchTool.handler
 );
 
@@ -58,7 +66,7 @@ app.get('/health', (req, res) => {
 });
 
 // GET: Establish SSE connection
-app.get('/sse', async (req, res) => {
+app.get('/sse', authenticateToken, async (req, res) => {
   const clientIp = req.headers['x-forwarded-for'] || req.ip;
   const userAgent = req.headers['user-agent'] || 'unknown';
 
@@ -91,7 +99,7 @@ app.get('/sse', async (req, res) => {
 });
 
 // POST: Handle message routing for specific SSE sessions
-app.post('/messages', async (req, res) => {
+app.post('/messages', authenticateToken, async (req, res) => {
   const sessionId = req.query.sessionId;
   if (!sessionId) {
     return res.status(400).send('Missing sessionId query parameter');
@@ -131,4 +139,7 @@ app.listen(PORT, () => {
   console.log(`SSE connection endpoint: http://localhost:${PORT}/sse`);
   console.log(`Message endpoint: http://localhost:${PORT}/messages`);
   console.log(`Health endpoint: http://localhost:${PORT}/health`);
+
+  // Start the keep-alive pinger loop
+  startKeepAlive();
 });
