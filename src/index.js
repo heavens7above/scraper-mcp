@@ -9,6 +9,7 @@ import * as scrapeBatchTool from './tools/scrape_batch.js';
 import { logUserEvent } from './lib/user_logger.js';
 import { startKeepAlive } from './lib/keep_alive.js';
 import { authenticateToken } from './lib/auth.js';
+import { setupOAuth } from './lib/oauth.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -66,6 +67,9 @@ app.use((req, res, next) => {
   console.log(`[Request] ${req.method} ${req.path} | Query: ${JSON.stringify(req.query)} | Auth: ${redactedAuth} | ClientID in query: ${req.query.client_id ? 'yes' : 'no'}`);
   next();
 });
+
+// Setup OAuth server endpoints
+setupOAuth(app);
 
 // Active SSE transport sessions
 const transports = {};

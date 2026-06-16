@@ -97,6 +97,67 @@ async function runTest() {
     assert.strictEqual(wrongBasicRes.status, 401, 'Should fail with 401');
     console.log('✅ Correctly blocked wrong Basic Auth password!');
 
+    // H. Test OAuth Discovery Endpoint
+    console.log('Testing OAuth Discovery Endpoint...');
+    const discoveryRes = await fetch(`${baseUrl}/.well-known/oauth-authorization-server`);
+    assert.strictEqual(discoveryRes.status, 200);
+    const discoveryJson = await discoveryRes.json();
+    assert.strictEqual(discoveryJson.authorization_endpoint, `${baseUrl}/oauth/authorize`);
+    assert.strictEqual(discoveryJson.token_endpoint, `${baseUrl}/oauth/token`);
+    console.log('✅ OAuth Discovery Endpoint metadata matches successfully!');
+
+    // I. Test OAuth Token Exchange flow
+    console.log('Testing OAuth Token Exchange flow...');
+    // Simulate user POST to /oauth/authorize (submitting passcode)
+    const authorizeRes = await fetch(`${baseUrl}/oauth/authorize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        redirect_uri: 'https://oauth.pstmn.io/v1/browser-callback',
+        state: 'xyzState',
+        client_id: 'admin',
+        passcode: 'my-super-secret-mcp-key'
+      }).toString(),
+      redirect: 'manual' // Don't automatically follow redirect, we want to extract the code
+    });
+
+    assert.strictEqual(authorizeRes.status, 302, 'Should redirect back to client callback');
+    const redirectLocation = authorizeRes.headers.get('location');
+    const redirectUrl = new URL(redirectLocation);
+    const authCode = redirectUrl.searchParams.get('code');
+    assert.ok(authCode, 'Authorization code should exist in redirect URL');
+    assert.strictEqual(redirectUrl.searchParams.get('state'), 'xyzState');
+    console.log('✅ Correctly obtained authorization code:', authCode);
+
+    // Exchange the code for access token at /oauth/token
+    const tokenRes = await fetch(`${baseUrl}/oauth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: authCode,
+        client_id: 'admin',
+        client_secret: 'my-super-secret-mcp-key'
+      }).toString()
+    });
+
+    assert.strictEqual(tokenRes.status, 200, 'Token exchange should succeed');
+    const tokenJson = await tokenRes.json();
+    assert.strictEqual(tokenJson.token_type, 'Bearer');
+    assert.strictEqual(tokenJson.access_token, 'my-super-secret-mcp-key');
+    console.log('✅ Successfully exchanged code for Bearer access token!');
+
+    // Connect to /sse using the returned bearer token
+    console.log('Requesting SSE connection with the obtained OAuth access token...');
+    const oauthSseController = new AbortController();
+    const oauthSseRes = await fetch(`${baseUrl}/sse`, {
+      headers: { 'Authorization': `Bearer ${tokenJson.access_token}` },
+      signal: oauthSseController.signal
+    });
+    assert.strictEqual(oauthSseRes.status, 200, 'Should connect using Bearer token');
+    oauthSseController.abort();
+    console.log('✅ Correctly allowed connection using the OAuth access token!');
+
     console.log('--- All Authentication Middleware Verification Passed! ---');
   } catch (err) {
     console.error('❌ Verification failed:', err);
