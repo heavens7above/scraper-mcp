@@ -50,6 +50,23 @@ server.registerTool(
 const app = express();
 app.use(express.json());
 
+// Request logging middleware for debugging connection issues
+app.use((req, res, next) => {
+  const authHeader = req.headers.authorization;
+  let redactedAuth = 'none';
+  if (authHeader) {
+    if (authHeader.toLowerCase().startsWith('bearer ')) {
+      redactedAuth = 'Bearer ***';
+    } else if (authHeader.toLowerCase().startsWith('basic ')) {
+      redactedAuth = 'Basic ***';
+    } else {
+      redactedAuth = 'present (unknown format)';
+    }
+  }
+  console.log(`[Request] ${req.method} ${req.path} | Query: ${JSON.stringify(req.query)} | Auth: ${redactedAuth} | ClientID in query: ${req.query.client_id ? 'yes' : 'no'}`);
+  next();
+});
+
 // Active SSE transport sessions
 const transports = {};
 

@@ -5,9 +5,9 @@ import process from 'node:process';
  * Pings the health endpoint at PUBLIC_URL/health every 12 minutes (720,000 ms).
  */
 export function startKeepAlive() {
-  const publicUrl = process.env.PUBLIC_URL;
+  const publicUrl = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL;
   if (!publicUrl) {
-    console.log('[Keep-Alive] PUBLIC_URL environment variable is not configured. Self-ping keep-alive is disabled.');
+    console.log('[Keep-Alive] Neither PUBLIC_URL nor RENDER_EXTERNAL_URL is configured. Self-ping keep-alive is disabled.');
     return;
   }
 
