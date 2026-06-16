@@ -66,7 +66,7 @@ export async function enrichWithNvidiaNim(scrapedText, userPrompt) {
     };
   }
 
-  const modelName = process.env.NVIDIA_MODEL || 'nvidia/llama-3.1-nemotron-ultra-253b-v1';
+  const modelName = process.env.NVIDIA_MODEL || 'nvidia/llama-3.1-nemotron-70b-instruct';
   const truncatedText = truncateText(scrapedText, 6000);
 
   const requestBody = {
